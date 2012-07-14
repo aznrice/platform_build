@@ -398,13 +398,22 @@ INTERNAL_RAMDISK_FILES := $(filter $(TARGET_ROOT_OUT)/%, \
 	$(ALL_GENERATED_SOURCES) \
 	$(ALL_DEFAULT_INSTALLED_MODULES))
 
-BUILT_RAMDISK_TARGET := $(PRODUCT_OUT)/ramdisk.img
+ifeq ($(TARGET_BOOTLOADER_TYPE),uboot)
+BUILT_RAMDISK_TARGET := $(PRODUCT_OUT)/uInitrd
+else
+BUILT_RAMDISK_TARGET := $(PRODUCT_OUT)/$(or $(INSTALLED_RAMDISK_TARGET_NAME),ramdisk.img)
+endif
 
 # We just build this directly to the install location.
 INSTALLED_RAMDISK_TARGET := $(BUILT_RAMDISK_TARGET)
 $(INSTALLED_RAMDISK_TARGET): $(MKBOOTFS) $(INTERNAL_RAMDISK_FILES) | $(MINIGZIP)
 	$(call pretty,"Target ram disk: $@")
+ifeq ($(TARGET_BOOTLOADER_TYPE),uboot)
+	$(hide) $(MKBOOTFS) $(TARGET_ROOT_OUT) | $(MINIGZIP) > $(PRODUCT_OUT)/obj/ramdisk.img
+	mkimage -A arm -O linux -T ramdisk -n "Android Ramdisk Image" -d $(PRODUCT_OUT)/obj/ramdisk.img $@
+else
 	$(hide) $(MKBOOTFS) $(TARGET_ROOT_OUT) | $(MINIGZIP) > $@
+endif
 
 .PHONY: ramdisk-nodeps
 ramdisk-nodeps: $(MKBOOTFS) | $(MINIGZIP)
@@ -417,6 +426,7 @@ ifneq ($(strip $(TARGET_NO_KERNEL)),true)
 # the boot image, which is a collection of other images.
 INTERNAL_BOOTIMAGE_ARGS := \
 	$(addprefix --second ,$(INSTALLED_2NDBOOTLOADER_TARGET)) \
+	$(addprefix --dt ,$(INSTALLED_DTB_TARGET)) \
 	--kernel $(INSTALLED_KERNEL_TARGET) \
 	--ramdisk $(INSTALLED_RAMDISK_TARGET)
 
@@ -430,6 +440,11 @@ endif
 BOARD_KERNEL_BASE := $(strip $(BOARD_KERNEL_BASE))
 ifdef BOARD_KERNEL_BASE
   INTERNAL_BOOTIMAGE_ARGS += --base $(BOARD_KERNEL_BASE)
+endif
+
+TARGET_TAG_ADDRESS := $(strip $(TARGET_TAG_ADDRESS))
+ifdef TARGET_TAG_ADDRESS
+  INTERNAL_BOOTIMAGE_ARGS += --tags-addr $(TARGET_TAG_ADDRESS)
 endif
 
 BOARD_KERNEL_PAGESIZE := $(strip $(BOARD_KERNEL_PAGESIZE))
