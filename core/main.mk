@@ -175,17 +175,17 @@ endif
 # Check for the correct version of javac
 javac_version := $(shell javac -version 2>&1 | head -n 1 | grep '[ "]1\.6[\. "$$]')
 ifeq ($(strip $(javac_version)),)
-$(info ************************************************************)
-$(info You are attempting to build with the incorrect version)
-$(info of javac.)
-$(info $(space))
-$(info Your version is: $(shell javac -version 2>&1 | head -n 1).)
-$(info The correct version is: 1.6.)
-$(info $(space))
-$(info Please follow the machine setup instructions at)
-$(info $(space)$(space)$(space)$(space)https://source.android.com/source/download.html)
-$(info ************************************************************)
-$(error stop)
+$(warning ************************************************************)
+$(warning You are attempting to build with the incorrect version)
+$(warning of javac.)
+$(warning $(space))
+$(warning Your version is: $(shell javac -version 2>&1 | head -n 1).)
+$(warning The correct version is: 1.6.)
+$(warning $(space))
+$(warning Please follow the machine setup instructions at)
+$(warning $(space)$(space)$(space)$(space)https://source.android.com/source/download.html)
+$(warning ************************************************************)
+#$(error stop)
 endif
 
 ifndef BUILD_EMULATOR
